@@ -10,8 +10,8 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'toppers', label: 'Toppers', icon: Trophy },
-  { id: 'oqad', label: 'O.Q.A.D', icon: Target },
-  { id: 'abroad', label: 'MBBS Abroad', icon: Globe },
+  { id: 'oqad', label: 'Daily Question', icon: Target },
+  { id: 'abroad', label: 'Study Abroad', icon: Globe },
   { id: 'about', label: 'About Us', icon: Info },
 ];
 
