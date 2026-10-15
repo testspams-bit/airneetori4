@@ -69,7 +69,12 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
   return (
     <nav
       ref={navRef}
-      className="relative isolate hidden items-center gap-1.5 md:flex lg:gap-2.5"
+      aria-label="Main navigation"
+      className={`desktop-nav relative isolate hidden items-center gap-1 rounded-full border p-1.5 shadow-sm md:flex ${
+        isDark
+          ? 'border-zinc-800 bg-zinc-900/60 shadow-black/20'
+          : 'border-slate-200 bg-white/80 shadow-slate-900/5'
+      }`}
     >
       <span
         aria-hidden="true"
@@ -95,19 +100,20 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
               buttonRefs.current[item.id] = node;
             }}
             onClick={() => onSelect(item.id)}
-            className={`desktop-nav-button relative z-10 flex min-w-[62px] cursor-pointer select-none flex-col items-center justify-center whitespace-nowrap rounded-xl px-3.5 py-1.5 font-mono text-xs font-bold tracking-tight ${
+            aria-label={item.label}
+            aria-current={isActive ? 'page' : undefined}
+            className={`desktop-nav-button group relative z-10 flex h-12 min-w-[60px] shrink-0 cursor-pointer select-none flex-col items-center justify-center gap-1 whitespace-nowrap rounded-2xl px-2 text-[10px] font-semibold transition-all duration-300 ${
               isActive
                 ? isDark
-                  ? 'text-[#CCFF00]'
-                  : 'text-[#0066FF]'
+                  ? 'desktop-nav-button--active-dark text-[#CCFF00]'
+                  : 'desktop-nav-button--active-light text-[#0066FF]'
                 : isDark
-                ? 'text-zinc-300 hover:bg-zinc-900/40 hover:text-white'
-                : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                ? 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
             }`}
-            title={item.label}
           >
             <Icon
-              className={`mb-0.5 h-4 w-4 ${
+              className={`desktop-nav-icon h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
                 isActive
                   ? isDark
                     ? 'text-[#CCFF00]'
@@ -116,9 +122,7 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
               }`}
               strokeWidth={2.4}
             />
-            <span className="leading-tight font-extrabold tracking-tight">
-              {item.label}
-            </span>
+            <span className="desktop-nav-caption leading-none">{item.label}</span>
           </button>
         );
       })}

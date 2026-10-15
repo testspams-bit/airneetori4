@@ -104,7 +104,12 @@ export const AnimatedCursor: React.FC<AnimatedCursorProps> = ({ theme }) => {
         style={
           {
             transform: `translate3d(${cursorPos.current.x}px, ${cursorPos.current.y}px, 0)`,
-            '--cursor-opacity': isDark ? '0.34' : '0.25',
+            '--cursor-opacity': isDark ? '0.34' : '0.42',
+            '--cursor-gradient': isDark
+              ? 'linear-gradient(90deg, aquamarine, mediumpurple)'
+              : 'linear-gradient(90deg, #0066FF, #A855F7)',
+            '--cursor-blob-opacity': isDark ? '0.68' : '0.78',
+            '--cursor-blob-blur': isDark ? '34px' : '28px',
           } as React.CSSProperties
         }
       >

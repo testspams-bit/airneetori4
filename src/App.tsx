@@ -56,8 +56,30 @@ export default function App() {
       const role = (callbackRole || storedRole) as AccountRole | null;
       const currentRole = session.user.user_metadata?.air_neetwork_role;
 
-      if (role && !currentRole) {
-        await supabase.auth.updateUser({ data: { air_neetwork_role: role } });
+      const pendingRegistration = localStorage.getItem('airneet-auth-registration');
+      let registrationData: { full_name: string; contact_phone: string; contact_email: string } | null = null;
+      if (pendingRegistration) {
+        try {
+          const parsed = JSON.parse(pendingRegistration) as Record<string, unknown>;
+          if (typeof parsed.full_name === 'string' && typeof parsed.contact_phone === 'string' && typeof parsed.contact_email === 'string') {
+            registrationData = {
+              full_name: parsed.full_name,
+              contact_phone: parsed.contact_phone,
+              contact_email: parsed.contact_email,
+            };
+          }
+        } catch {
+          localStorage.removeItem('airneet-auth-registration');
+        }
+      }
+
+      const userMetadata = {
+        ...(role && !currentRole ? { air_neetwork_role: role } : {}),
+        ...(registrationData ?? {}),
+      };
+      if (Object.keys(userMetadata).length > 0) {
+        const { error } = await supabase.auth.updateUser({ data: userMetadata });
+        if (!error && registrationData) localStorage.removeItem('airneet-auth-registration');
       }
       localStorage.removeItem('airneet-auth-role');
       if (callbackRole) {

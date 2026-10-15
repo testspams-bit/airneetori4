@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowRight, GraduationCap, ArrowLeft, BookOpenCheck, LoaderCircle } from 'lucide-react';
+import { X, ArrowRight, GraduationCap, ArrowLeft, BookOpenCheck, LoaderCircle, Mail, Smartphone } from 'lucide-react';
 import { Logo } from './Logo.tsx';
-import { supabase, type AccountRole, roleLabel } from '../lib/supabase.ts';
+import { supabase, type AccountRole } from '../lib/supabase.ts';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -18,6 +18,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [step, setStep] = useState<'role' | 'auth'>('role');
   const [role, setRole] = useState<AccountRole>('student_mentee');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authMethod, setAuthMethod] = useState<'phone' | 'email'>('phone');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authMessage, setAuthMessage] = useState('');
@@ -32,6 +37,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setStep('role');
       setRole('student_mentee');
       setAuthMode('login');
+      setAuthMethod('phone');
+      setFullName('');
+      setPhone('');
+      setOtpSent(false);
+      setOtpCode('');
+      setEmail('');
+      setPassword('');
       setAuthMessage('');
     }
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -59,9 +71,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     return true;
   };
 
+  const validateRegistrationDetails = () => {
+    if (authMode !== 'signup') return true;
+    if (!fullName.trim() || !phone.trim() || !email.trim()) {
+      setAuthMessage('Enter your name, mobile number, and email to register.');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setAuthMessage('Enter a valid email address.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthMessage('');
+    if (!validateRegistrationDetails()) return;
     if (!supabase) {
       setAuthMessage('Supabase is not configured yet. Add the project URL and publishable key to the app environment.');
       return;
@@ -71,9 +97,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       if (authMode === 'signup') {
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
-          options: { data: { air_neetwork_role: role } },
+          options: {
+            data: {
+              air_neetwork_role: role,
+              full_name: fullName.trim(),
+              contact_phone: phone.trim(),
+              contact_email: email.trim(),
+            },
+          },
         });
         if (error) throw error;
 
@@ -102,8 +135,78 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
+  const requestPhoneOtp = async () => {
+    setAuthMessage('');
+    if (!validateRegistrationDetails()) return;
+    if (!supabase) {
+      setAuthMessage('Supabase is not configured yet. Add the project URL and publishable key to the app environment.');
+      return;
+    }
+    if (!phone.trim()) {
+      setAuthMessage('Enter your mobile number with country code.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: phone.trim(),
+        options: {
+          shouldCreateUser: authMode === 'signup',
+          data: authMode === 'signup'
+            ? {
+                air_neetwork_role: role,
+                full_name: fullName.trim(),
+                contact_phone: phone.trim(),
+                contact_email: email.trim(),
+              }
+            : { air_neetwork_role: role },
+        },
+      });
+      if (error) throw error;
+      setOtpSent(true);
+      setAuthMessage('Verification code sent.');
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : 'Could not send a verification code. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpSent) {
+      await requestPhoneOtp();
+      return;
+    }
+
+    setAuthMessage('');
+    if (!supabase) {
+      setAuthMessage('Supabase is not configured yet. Add the project URL and publishable key to the app environment.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: phone.trim(),
+        token: otpCode.trim(),
+        type: 'sms',
+      });
+      if (error) throw error;
+      if (data.user && await checkRoleAndSave(data.user)) {
+        setAuthMessage('Signed in successfully.');
+        window.setTimeout(onClose, 700);
+      }
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : 'Could not verify the code. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setAuthMessage('');
+    if (!validateRegistrationDetails()) return;
     if (!supabase) {
       setAuthMessage('Supabase is not configured yet. Add the project URL and publishable key to the app environment.');
       return;
@@ -111,6 +214,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     setIsSubmitting(true);
     localStorage.setItem('airneet-auth-role', role);
+    if (authMode === 'signup') {
+      localStorage.setItem('airneet-auth-registration', JSON.stringify({
+        full_name: fullName.trim(),
+        contact_phone: phone.trim(),
+        contact_email: email.trim(),
+      }));
+    }
     const callbackUrl = new URL(window.location.href);
     callbackUrl.searchParams.set('authRole', role);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -119,6 +229,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     });
     if (error) {
       localStorage.removeItem('airneet-auth-role');
+      localStorage.removeItem('airneet-auth-registration');
       setAuthMessage(error.message);
       setIsSubmitting(false);
     }
@@ -130,7 +241,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onClick={onClose}
     >
       <div
-        className={`w-full max-w-xs rounded-2xl p-5 shadow-2xl relative border transition-all ${
+        className={`w-full max-w-xs max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl p-5 shadow-2xl relative border transition-all ${
           isDark
             ? 'bg-[#121215] border-zinc-800 text-white'
             : 'bg-white border-slate-200 text-slate-900 shadow-xl'
@@ -212,15 +323,100 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <button
                   key={mode}
                   type="button"
-                  onClick={() => { setAuthMode(mode); setAuthMessage(''); }}
+                  onClick={() => { setAuthMode(mode); setOtpSent(false); setOtpCode(''); setAuthMessage(''); }}
                   className={`flex-1 rounded-lg py-2 transition ${authMode === mode ? isDark ? 'bg-black text-[#CCFF00]' : 'bg-white text-[#0066FF] shadow-sm' : ''}`}
                 >
-                  {mode === 'login' ? 'Log in' : 'Sign up'}
+                  {mode === 'login' ? 'Log in' : 'Register'}
                 </button>
               ))}
             </div>
+            {authMode === 'signup' && (
+              <div className="mb-4 space-y-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-mono font-medium text-zinc-400">Name</label>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all focus:outline-none ${isDark ? 'bg-zinc-900/90 border-zinc-800 text-white focus:border-[#CCFF00]' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#0066FF]'}`}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-mono font-medium text-zinc-400">Mobile number</label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="+91 98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={otpSent || isSubmitting}
+                    required
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all focus:outline-none disabled:opacity-60 ${isDark ? 'bg-zinc-900/90 border-zinc-800 text-white focus:border-[#CCFF00]' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#0066FF]'}`}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-mono font-medium text-zinc-400">Email address</label>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all focus:outline-none ${isDark ? 'bg-zinc-900/90 border-zinc-800 text-white focus:border-[#CCFF00]' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#0066FF]'}`}
+                  />
+                </div>
+              </div>
+            )}
+            {authMethod === 'phone' ? (
+              <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                {authMode !== 'signup' && <div>
+                  <label className="mb-1.5 block text-xs font-mono font-medium text-zinc-400">Mobile number</label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="+91 98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={otpSent || isSubmitting}
+                    required
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all focus:outline-none disabled:opacity-60 ${isDark ? 'bg-zinc-900/90 border-zinc-800 text-white focus:border-[#CCFF00]' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#0066FF]'}`}
+                  />
+                </div>}
+                {otpSent && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-mono font-medium text-zinc-400">Verification code</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="Enter the 6-digit code"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      required
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm tracking-[0.25em] transition-all focus:outline-none ${isDark ? 'bg-zinc-900/90 border-zinc-800 text-white focus:border-[#CCFF00]' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#0066FF]'}`}
+                    />
+                  </div>
+                )}
+                <button type="submit" disabled={isSubmitting} className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition disabled:opacity-60 ${isDark ? 'bg-[#CCFF00] text-black hover:bg-[#d8ff33]' : 'bg-[#0066FF] text-white hover:bg-[#0052cc]'}`}>
+                  {isSubmitting && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                  {otpSent ? 'Verify code' : authMode === 'signup' ? 'Continue with OTP' : 'Send OTP'}
+                </button>
+                {otpSent && (
+                  <div className="flex items-center justify-between text-xs">
+                    <button type="button" onClick={() => { setOtpSent(false); setOtpCode(''); setAuthMessage(''); }} className={isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}>Change number</button>
+                    <button type="button" onClick={requestPhoneOtp} disabled={isSubmitting} className={isDark ? 'text-[#CCFF00] disabled:opacity-50' : 'text-[#0066FF] disabled:opacity-50'}>Resend code</button>
+                  </div>
+                )}
+              </form>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
+              {authMode !== 'signup' && <div>
                 <label className="mb-1.5 block text-xs font-mono font-medium text-zinc-400">Email address</label>
                 <input
                   type="email"
@@ -230,7 +426,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   required
                   className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all focus:outline-none ${isDark ? 'bg-zinc-900/90 border-zinc-800 text-white focus:border-[#CCFF00]' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#0066FF]'}`}
                 />
-              </div>
+              </div>}
               <div>
                 <label className="mb-1.5 block text-xs font-mono font-medium text-zinc-400">Password</label>
                 <input
@@ -245,12 +441,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </div>
               <button type="submit" disabled={isSubmitting} className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition disabled:opacity-60 ${isDark ? 'bg-[#CCFF00] text-black hover:bg-[#d8ff33]' : 'bg-[#0066FF] text-white hover:bg-[#0052cc]'}`}>
                 {isSubmitting && <LoaderCircle className="h-4 w-4 animate-spin" />}
-              {authMode === 'signup' ? 'Sign up' : 'Log in'}
+              {authMode === 'signup' ? 'Register' : 'Log in'}
               </button>
             </form>
+            )}
             <div className="my-4 flex items-center gap-3 text-[11px] font-mono uppercase tracking-wider text-zinc-500">
               <span className="h-px flex-1 bg-zinc-700/60" />or<span className="h-px flex-1 bg-zinc-700/60" />
             </div>
+            <button
+              type="button"
+              onClick={() => { setAuthMethod(authMethod === 'phone' ? 'email' : 'phone'); setOtpSent(false); setOtpCode(''); setAuthMessage(''); }}
+              className={`mb-2 flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-semibold transition ${isDark ? 'border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800' : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'}`}
+            >
+              {authMethod === 'phone' ? <Mail className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+              {authMethod === 'phone' ? 'Continue with email' : 'Use mobile OTP instead'}
+            </button>
             <button
               type="button"
               onClick={handleGoogleSignIn}
