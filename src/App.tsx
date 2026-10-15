@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Logo } from './components/Logo.tsx';
 import { SocialModal } from './components/SocialModal.tsx';
 import { LoginModal } from './components/LoginModal.tsx';
@@ -12,6 +12,9 @@ import { Footer } from './components/Footer.tsx';
 import { DesktopNav, MobileBottomNav } from './components/Navigation.tsx';
 import { AnimatedCursor } from './components/AnimatedCursor.tsx';
 import { SupportAgentIcon } from './components/SupportAgentIcon.tsx';
+import { AIChatModal } from './components/AIChatModal.tsx';
+import { supabase, type AccountRole } from './lib/supabase.ts';
+import type { Session } from '@supabase/supabase-js';
 import {
   Sun,
   Moon,
@@ -37,6 +40,46 @@ export default function App() {
   const [isSocialOpen, setIsSocialOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isGetInTouchOpen, setIsGetInTouchOpen] = useState(false);
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    const syncSession = async (session: Session | null) => {
+      setSignedInEmail(session?.user.email ?? null);
+      if (!session) return;
+
+      const url = new URL(window.location.href);
+      const callbackRole = url.searchParams.get('authRole');
+      const storedRole = localStorage.getItem('airneet-auth-role');
+      const role = (callbackRole || storedRole) as AccountRole | null;
+      const currentRole = session.user.user_metadata?.air_neetwork_role;
+
+      if (role && !currentRole) {
+        await supabase.auth.updateUser({ data: { air_neetwork_role: role } });
+      }
+      localStorage.removeItem('airneet-auth-role');
+      if (callbackRole) {
+        url.searchParams.delete('authRole');
+        window.history.replaceState({}, '', url.toString());
+      }
+    };
+
+    void supabase.auth.getSession().then(({ data }) => syncSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => void syncSession(session), 0);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLoginButton = async () => {
+    if (signedInEmail && supabase) {
+      await supabase.auth.signOut();
+    } else {
+      setIsLoginOpen(true);
+    }
+  };
 
   return (
     <div
@@ -123,16 +166,16 @@ export default function App() {
             {/* Log In Button */}
             <button
               type="button"
-              onClick={() => setIsLoginOpen(true)}
+              onClick={handleLoginButton}
               className={`flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold font-mono uppercase tracking-wider transition-all duration-200 cursor-pointer active:scale-95 shadow-sm ${
                 isDark
                   ? 'bg-[#CCFF00] text-black hover:bg-[#d8ff33]'
                   : 'bg-[#0066FF] text-white hover:bg-[#0052cc] shadow-[#0066FF]/20 shadow-md'
               }`}
-              title="Log in to your account"
+              title={signedInEmail ? 'Sign out of your account' : 'Log in to your account'}
             >
               <LogIn className="w-3.5 h-3.5" />
-              <span>Log in</span>
+              <span>{signedInEmail ? 'Sign out' : 'Log in'}</span>
             </button>
           </div>
         </div>
@@ -329,7 +372,13 @@ export default function App() {
       />
 
       {/* Fixed customer support representative icon */}
-      <SupportAgentIcon theme={theme} />
+      <SupportAgentIcon theme={theme} onOpenAIChat={() => setIsAIChatOpen(true)} />
+
+      <AIChatModal
+        isOpen={isAIChatOpen}
+        onClose={() => setIsAIChatOpen(false)}
+        theme={theme}
+      />
 
       {/* Get In Touch Modal (WhatsApp, Mobile Number, Request Callback Form) */}
       <GetInTouchModal

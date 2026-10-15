@@ -1,11 +1,54 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig, loadEnv} from 'vite';
+import type { Plugin } from 'vite';
+import { generateChatReply, type ChatTurn } from './server/chatService.ts';
 
-export default defineConfig(() => {
+const aiChatApi = (): Plugin => ({
+  name: 'air-neetwork-ai-chat',
+  configureServer(server) {
+    server.middlewares.use('/api/chat', (req, res, next) => {
+      if (req.method !== 'POST') return next();
+
+      let body = '';
+      req.on('data', (chunk: Buffer) => {
+        body += chunk.toString();
+        if (body.length > 16_000) {
+          res.statusCode = 413;
+          res.end(JSON.stringify({ error: 'Message is too long.' }));
+          req.destroy();
+        }
+      });
+
+      req.on('end', async () => {
+        try {
+          const parsed = JSON.parse(body) as { messages?: ChatTurn[] };
+          if (!Array.isArray(parsed.messages) || parsed.messages.length === 0 || parsed.messages.some((message) => typeof message.text !== 'string' || message.text.length > 2000)) {
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Please send a valid message.' }));
+            return;
+          }
+
+          const reply = await generateChatReply(parsed.messages);
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ reply }));
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'AI chat request failed.';
+          res.statusCode = message.includes('not configured') ? 503 : 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: message }));
+        }
+      });
+    });
+  },
+});
+
+export default defineConfig(({ mode }) => {
+  Object.assign(process.env, loadEnv(mode, process.cwd(), ''));
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), aiChatApi()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

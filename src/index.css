@@ -112,7 +112,6 @@
   background: var(--support-accent);
   color: #080808;
   box-shadow: 0 6px 20px rgb(0 0 0 / 0.3);
-  pointer-events: none;
 }
 
 .support-agent::before {
@@ -189,5 +188,10 @@
   .support-agent {
     right: 1rem;
     bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+
+  .support-tools {
+    right: 1rem;
+    bottom: calc(8.75rem + env(safe-area-inset-bottom));
   }
 }
