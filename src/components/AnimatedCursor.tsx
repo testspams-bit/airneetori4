@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface AnimatedCursorProps {
   theme: 'dark' | 'light';
@@ -11,68 +11,66 @@ export const AnimatedCursor: React.FC<AnimatedCursorProps> = ({ theme }) => {
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
 
-  // Direct position for the fast center dot
   const mousePos = useRef({ x: -100, y: -100 });
-  // Interpolated trailing position for the bubble
-  const bubblePos = useRef({ x: -100, y: -100 });
-
-  const dotRef = useRef<HTMLDivElement>(null);
-  const bubbleRef = useRef<HTMLDivElement>(null);
+  const cursorPos = useRef({ x: -100, y: -100 });
+  const hasPosition = useRef(false);
+  const cursorRef = useRef<HTMLDivElement>(null);
   const rafId = useRef<number | null>(null);
 
   useEffect(() => {
-    // Check if device supports fine hover cursor (ignore on touchscreens)
     const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
     if (!hasFinePointer) return;
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mousePos.current = { x: e.clientX, y: e.clientY };
-      if (!isVisible) setIsVisible(true);
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
 
-      // Check if hovering over clickable elements
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'BUTTON' ||
-          target.tagName === 'A' ||
-          target.tagName === 'INPUT' ||
-          target.tagName === 'SELECT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.closest('button') ||
-          target.closest('a') ||
-          target.getAttribute('role') === 'switch' ||
-          target.classList.contains('cursor-pointer'))
-      ) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
+      mousePos.current = { x: event.clientX, y: event.clientY };
+      if (!hasPosition.current) {
+        cursorPos.current = mousePos.current;
+        hasPosition.current = true;
       }
+      setIsVisible(true);
+
+      const target = event.target;
+      const isInteractive =
+        target instanceof Element &&
+        Boolean(
+          target.closest(
+            'button, a, input, select, textarea, [role="button"], [role="switch"], .cursor-pointer',
+          ),
+        );
+      setIsHovering(isInteractive);
     };
 
-    const handleMouseDown = () => setIsClicking(true);
-    const handleMouseUp = () => setIsClicking(false);
-    const handleMouseLeave = () => setIsVisible(false);
-    const handleMouseEnter = () => setIsVisible(true);
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch') setIsClicking(true);
+    };
+    const handlePointerUp = () => setIsClicking(false);
+    const handleLeave = () => {
+      setIsVisible(false);
+      setIsHovering(false);
+      setIsClicking(false);
+    };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('mouseleave', handleMouseLeave);
-    document.addEventListener('mouseenter', handleMouseEnter);
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('blur', handleLeave);
+    document.addEventListener('mouseleave', handleLeave);
 
-    // Smooth animation loop using lerp (Linear Interpolation) for fluid trailing effect
     const loop = () => {
-      const ease = 0.18; // smooth trailing speed
+      const ease = prefersReducedMotion ? 1 : 0.14;
+      cursorPos.current.x +=
+        (mousePos.current.x - cursorPos.current.x) * ease;
+      cursorPos.current.y +=
+        (mousePos.current.y - cursorPos.current.y) * ease;
 
-      bubblePos.current.x += (mousePos.current.x - bubblePos.current.x) * ease;
-      bubblePos.current.y += (mousePos.current.y - bubblePos.current.y) * ease;
-
-      if (dotRef.current) {
-        dotRef.current.style.transform = `translate3d(${mousePos.current.x}px, ${mousePos.current.y}px, 0)`;
-      }
-
-      if (bubbleRef.current) {
-        bubbleRef.current.style.transform = `translate3d(${bubblePos.current.x}px, ${bubblePos.current.y}px, 0)`;
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate3d(${cursorPos.current.x}px, ${cursorPos.current.y}px, 0)`;
       }
 
       rafId.current = requestAnimationFrame(loop);
@@ -81,14 +79,15 @@ export const AnimatedCursor: React.FC<AnimatedCursorProps> = ({ theme }) => {
     rafId.current = requestAnimationFrame(loop);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-      document.removeEventListener('mouseenter', handleMouseEnter);
-      if (rafId.current) cancelAnimationFrame(rafId.current);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('blur', handleLeave);
+      document.removeEventListener('mouseleave', handleLeave);
+      if (rafId.current !== null) cancelAnimationFrame(rafId.current);
     };
-  }, [isVisible]);
+  }, []);
 
   return (
     <div
@@ -97,29 +96,21 @@ export const AnimatedCursor: React.FC<AnimatedCursorProps> = ({ theme }) => {
       }`}
       aria-hidden="true"
     >
-      {/* Trailing Fluid Bubble */}
       <div
-        ref={bubbleRef}
-        className={`fixed top-0 left-0 -ml-5 -mt-5 w-10 h-10 rounded-full transition-all duration-200 ease-out will-change-transform ${
-          isHovering
-            ? isDark
-              ? 'scale-150 bg-[#CCFF00]/25 border-2 border-[#CCFF00]/80 shadow-[0_0_20px_rgba(204,255,0,0.5)] backdrop-blur-[2px]'
-              : 'scale-150 bg-[#0066FF]/20 border-2 border-[#0066FF]/80 shadow-[0_0_20px_rgba(0,102,255,0.4)] backdrop-blur-[2px]'
-            : isDark
-            ? 'scale-100 bg-[#CCFF00]/15 border border-[#CCFF00]/50 shadow-[0_0_12px_rgba(204,255,0,0.25)]'
-            : 'scale-100 bg-[#0066FF]/15 border border-[#0066FF]/50 shadow-[0_0_12px_rgba(0,102,255,0.2)]'
-        } ${isClicking ? 'scale-90 duration-75' : ''}`}
-      />
-
-      {/* Immediate Sharp Center Dot */}
-      <div
-        ref={dotRef}
-        className={`fixed top-0 left-0 -ml-1 -mt-1 w-2 h-2 rounded-full transition-transform duration-75 will-change-transform ${
-          isDark
-            ? 'bg-[#CCFF00] shadow-[0_0_8px_#CCFF00]'
-            : 'bg-[#0066FF] shadow-[0_0_8px_#0066FF]'
-        } ${isHovering ? 'scale-0' : 'scale-100'}`}
-      />
+        ref={cursorRef}
+        className={`grainy-cursor fixed top-0 left-0 -ml-9 -mt-9 pointer-events-none ${
+          isHovering ? 'grainy-cursor--interactive' : ''
+        } ${isClicking ? 'grainy-cursor--clicking' : ''}`}
+        style={
+          {
+            transform: `translate3d(${cursorPos.current.x}px, ${cursorPos.current.y}px, 0)`,
+            '--cursor-opacity': isDark ? '0.34' : '0.25',
+          } as React.CSSProperties
+        }
+      >
+        <span className="grainy-cursor__blob" />
+        <span className="grainy-cursor__grain" />
+      </div>
     </div>
   );
 };

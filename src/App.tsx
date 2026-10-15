@@ -11,6 +11,7 @@ import { GetInTouchModal } from './components/GetInTouchModal.tsx';
 import { Footer } from './components/Footer.tsx';
 import { DesktopNav, MobileBottomNav } from './components/Navigation.tsx';
 import { AnimatedCursor } from './components/AnimatedCursor.tsx';
+import { SupportAgentIcon } from './components/SupportAgentIcon.tsx';
 import {
   Sun,
   Moon,
@@ -326,6 +327,9 @@ export default function App() {
         activeId={activeNav}
         onSelect={setActiveNav}
       />
+
+      {/* Fixed customer support representative icon */}
+      <SupportAgentIcon theme={theme} />
 
       {/* Get In Touch Modal (WhatsApp, Mobile Number, Request Callback Form) */}
       <GetInTouchModal

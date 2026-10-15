@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Home, Trophy, Target, Globe, Info } from 'lucide-react';
 
 export interface NavItem {
@@ -27,9 +27,63 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
   onSelect,
 }) => {
   const isDark = theme === 'dark';
+  const navRef = useRef<HTMLElement>(null);
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [highlight, setHighlight] = useState({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const nav = navRef.current;
+      const activeButton = buttonRefs.current[activeId];
+      if (!nav || !activeButton) return;
+
+      const navRect = nav.getBoundingClientRect();
+      const buttonRect = activeButton.getBoundingClientRect();
+      setHighlight({
+        x: buttonRect.left - navRect.left,
+        y: buttonRect.top - navRect.top,
+        width: buttonRect.width,
+        height: buttonRect.height,
+      });
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (navRef.current) observer.observe(navRef.current);
+    Object.values(buttonRefs.current).forEach((button) => {
+      if (button) observer.observe(button);
+    });
+    window.addEventListener('resize', measure);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [activeId]);
 
   return (
-    <nav className="hidden md:flex items-center gap-1.5 lg:gap-2.5">
+    <nav
+      ref={navRef}
+      className="relative isolate hidden items-center gap-1.5 md:flex lg:gap-2.5"
+    >
+      <span
+        aria-hidden="true"
+        className={`desktop-nav-highlight ${
+          isDark
+            ? 'desktop-nav-highlight--dark'
+            : 'desktop-nav-highlight--light'
+        }`}
+        style={{
+          width: highlight.width,
+          height: highlight.height,
+          transform: `translate3d(${highlight.x}px, ${highlight.y}px, 0)`,
+        }}
+      />
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = activeId === item.id;
@@ -37,24 +91,27 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
         return (
           <button
             key={item.id}
+            ref={(node) => {
+              buttonRefs.current[item.id] = node;
+            }}
             onClick={() => onSelect(item.id)}
-            className={`flex flex-col items-center justify-center px-3.5 py-1.5 rounded-xl text-xs font-bold font-mono tracking-tight transition-all cursor-pointer select-none whitespace-nowrap min-w-[62px] ${
+            className={`desktop-nav-button relative z-10 flex min-w-[62px] cursor-pointer select-none flex-col items-center justify-center whitespace-nowrap rounded-xl px-3.5 py-1.5 font-mono text-xs font-bold tracking-tight ${
               isActive
                 ? isDark
-                  ? 'bg-zinc-900 text-[#CCFF00] border border-[#CCFF00]/40 shadow-xs'
-                  : 'bg-slate-100 text-[#0066FF] border border-[#0066FF]/25 shadow-xs'
+                  ? 'text-[#CCFF00]'
+                  : 'text-[#0066FF]'
                 : isDark
-                ? 'text-zinc-300 hover:text-white hover:bg-zinc-900/60'
-                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                ? 'text-zinc-300 hover:bg-zinc-900/40 hover:text-white'
+                : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
             }`}
             title={item.label}
           >
             <Icon
-              className={`w-4 h-4 mb-0.5 transition-transform ${
+              className={`mb-0.5 h-4 w-4 ${
                 isActive
                   ? isDark
-                    ? 'text-[#CCFF00] scale-105'
-                    : 'text-[#0066FF] scale-105'
+                    ? 'text-[#CCFF00]'
+                    : 'text-[#0066FF]'
                   : ''
               }`}
               strokeWidth={2.4}

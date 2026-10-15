@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrandName } from './BrandName.tsx';
-import logoLight from '../assets/logo-light.png';
-import logoDark from '../assets/logo-dark.png';
+import logoLight from '../../resources/air-logo-light.png';
+import logoDark from '../../resources/air-logo-dark.png';
 
 interface LogoProps {
   className?: string;
