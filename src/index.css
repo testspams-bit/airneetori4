@@ -23,25 +23,30 @@
   }
 }
 
-.desktop-nav-highlight {
+.desktop-nav-button--active-dark::after,
+.desktop-nav-button--active-light::after {
   position: absolute;
-  z-index: 0;
-  border: 1px solid rgb(204 255 0 / 0.24);
+  bottom: 1px;
+  left: 50%;
+  width: 14px;
+  height: 2px;
   border-radius: 9999px;
-  background: rgb(204 255 0 / 0.1);
-  box-shadow: 0 0 18px rgb(204 255 0 / 0.08);
-  pointer-events: none;
-  transition:
-    transform 360ms cubic-bezier(0.22, 0.7, 0.2, 1),
-    width 360ms cubic-bezier(0.22, 0.7, 0.2, 1),
-    height 360ms cubic-bezier(0.22, 0.7, 0.2, 1);
-  will-change: transform, width, height;
+  content: "";
+  transform: translateX(-50%);
+  animation: desktop-nav-marker-in 220ms ease-out both;
 }
 
-.desktop-nav-highlight--light {
-  border-color: rgb(0 102 255 / 0.16);
-  background: rgb(0 102 255 / 0.08);
-  box-shadow: 0 0 18px rgb(0 102 255 / 0.08);
+.desktop-nav-button--active-dark::after {
+  background: #ccff00;
+}
+
+.desktop-nav-button--active-light::after {
+  background: #0066ff;
+}
+
+@keyframes desktop-nav-marker-in {
+  from { width: 0; opacity: 0; }
+  to { width: 14px; opacity: 1; }
 }
 
 .desktop-nav-button {
@@ -218,7 +223,6 @@
     animation-duration: 0.01ms;
   }
 
-  .desktop-nav-highlight,
   .desktop-nav-button,
   .desktop-nav-button--active-dark .desktop-nav-icon,
   .desktop-nav-button--active-dark .desktop-nav-caption,

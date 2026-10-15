@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React from 'react';
 import { Home, Trophy, Target, Globe, Info } from 'lucide-react';
 
 export interface NavItem {
@@ -27,68 +27,12 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
   onSelect,
 }) => {
   const isDark = theme === 'dark';
-  const navRef = useRef<HTMLElement>(null);
-  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const [highlight, setHighlight] = useState({
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  });
-
-  useLayoutEffect(() => {
-    const measure = () => {
-      const nav = navRef.current;
-      const activeButton = buttonRefs.current[activeId];
-      if (!nav || !activeButton) return;
-
-      const navRect = nav.getBoundingClientRect();
-      const buttonRect = activeButton.getBoundingClientRect();
-      setHighlight({
-        x: buttonRect.left - navRect.left,
-        y: buttonRect.top - navRect.top,
-        width: buttonRect.width,
-        height: buttonRect.height,
-      });
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    if (navRef.current) observer.observe(navRef.current);
-    Object.values(buttonRefs.current).forEach((button) => {
-      if (button) observer.observe(button);
-    });
-    window.addEventListener('resize', measure);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', measure);
-    };
-  }, [activeId]);
 
   return (
     <nav
-      ref={navRef}
       aria-label="Main navigation"
-      className={`desktop-nav relative isolate hidden items-center gap-1 rounded-full border p-1.5 shadow-sm md:flex ${
-        isDark
-          ? 'border-zinc-800 bg-zinc-900/60 shadow-black/20'
-          : 'border-slate-200 bg-white/80 shadow-slate-900/5'
-      }`}
+      className="desktop-nav hidden items-center gap-3 md:flex"
     >
-      <span
-        aria-hidden="true"
-        className={`desktop-nav-highlight ${
-          isDark
-            ? 'desktop-nav-highlight--dark'
-            : 'desktop-nav-highlight--light'
-        }`}
-        style={{
-          width: highlight.width,
-          height: highlight.height,
-          transform: `translate3d(${highlight.x}px, ${highlight.y}px, 0)`,
-        }}
-      />
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = activeId === item.id;
@@ -96,24 +40,21 @@ export const DesktopNav: React.FC<DesktopNavProps> = ({
         return (
           <button
             key={item.id}
-            ref={(node) => {
-              buttonRefs.current[item.id] = node;
-            }}
             onClick={() => onSelect(item.id)}
             aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
-            className={`desktop-nav-button group relative z-10 flex h-12 min-w-[60px] shrink-0 cursor-pointer select-none flex-col items-center justify-center gap-1 whitespace-nowrap rounded-2xl px-2 text-[10px] font-semibold transition-all duration-300 ${
+            className={`desktop-nav-button group relative flex h-12 min-w-[58px] shrink-0 cursor-pointer select-none flex-col items-center justify-center gap-1 whitespace-nowrap px-1.5 text-[10px] font-medium transition-all duration-300 ${
               isActive
                 ? isDark
                   ? 'desktop-nav-button--active-dark text-[#CCFF00]'
                   : 'desktop-nav-button--active-light text-[#0066FF]'
                 : isDark
-                ? 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                ? 'text-zinc-400 hover:text-white'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             <Icon
-              className={`desktop-nav-icon h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
+              className={`desktop-nav-icon h-[17px] w-[17px] shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 ${
                 isActive
                   ? isDark
                     ? 'text-[#CCFF00]'
