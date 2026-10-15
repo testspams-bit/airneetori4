@@ -21,6 +21,12 @@
   h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.035em;
   }
+  .about-title-font {
+    font-family: 'Caveat', cursive !important;
+  }
+  .about-copy-font {
+    font-family: 'Space Grotesk', sans-serif !important;
+  }
 }
 
 .desktop-nav-button--active-dark::after,

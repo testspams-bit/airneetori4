@@ -20,16 +20,9 @@ import {
   Moon,
   LogIn,
   Mail,
-  ArrowRight,
-  Award,
-  CheckCircle2,
-  Sparkles,
-  HelpCircle,
-  Globe,
-  GraduationCap,
-  Target,
-  ShieldCheck,
   PhoneCall,
+  Play,
+  Sparkles,
 } from 'lucide-react';
 
 export default function App() {
@@ -205,162 +198,55 @@ export default function App() {
 
       {/* Main Content Area - Full height so footer is hidden until scroll */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex-1 flex flex-col justify-between min-h-[calc(100vh-4rem)]">
-        {/* Dynamic Tab Content */}
-        <div className="py-12 md:py-20 flex-1">
-          {activeNav === 'home' && (
-            <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-              <div
-                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider mb-6 border ${
-                  isDark
-                    ? 'bg-zinc-900 border-zinc-800 text-[#CCFF00]'
-                    : 'bg-slate-100 border-slate-200 text-[#0066FF]'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>1-on-1 Strategic Mentorship · Class 11, 12 &amp; Droppers</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight uppercase leading-[1.05] mb-6">
-                Cracking NEET Gets Better When You Have An{' '}
-                <span className={isDark ? 'text-[#CCFF00]' : 'text-[#0066FF]'}>
-                  AIR Mentor
-                </span>
+        {activeNav === 'about' ? (
+          <section className="grid flex-1 items-center gap-10 py-12 md:grid-cols-2 md:gap-14 md:py-16" aria-labelledby="about-title">
+            <div className="max-w-xl">
+              <h1 id="about-title" className={`about-title-font mb-8 flex items-center gap-3 text-5xl font-bold leading-none tracking-tight sm:text-6xl ${isDark ? 'text-[#CCFF00]' : 'text-[#A16207]'}`}>
+                About Us
+                <Sparkles className="h-6 w-6 shrink-0" aria-hidden="true" />
               </h1>
-
-              <p className={`text-base sm:text-lg max-w-2xl leading-relaxed mb-8 ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
-                Connect with MBBS toppers from AIIMS, MAMC, and top government medical colleges who personally mastered the 700+ cutoff thresholds.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-left font-mono">
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className={`text-lg font-bold mb-1 ${isDark ? 'text-[#CCFF00]' : 'text-[#0066FF]'}`}>
-                    AIR &lt; 1000
-                  </div>
-                  <div className="text-xs text-zinc-400">Verified AIIMS &amp; GMC MBBS Mentors</div>
-                </div>
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className={`text-lg font-bold mb-1 ${isDark ? 'text-[#CCFF00]' : 'text-[#0066FF]'}`}>
-                    Zero Fluff
-                  </div>
-                  <div className="text-xs text-zinc-400">Weekly Error Log &amp; Speed Audits</div>
-                </div>
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className={`text-lg font-bold mb-1 ${isDark ? 'text-[#CCFF00]' : 'text-[#0066FF]'}`}>
-                    O.Q.A.D Daily
-                  </div>
-                  <div className="text-xs text-zinc-400">Original Question A Day Practice</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeNav === 'toppers' && (
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-10">
-                <h2 className="text-3xl font-extrabold uppercase tracking-tight mb-2">
-                  AIR Ranker Mentors
-                </h2>
-                <p className="text-sm text-zinc-400 font-mono">
-                  Learn directly from top scorers who walked the exact path
+              <div className={`about-copy-font space-y-4 text-justify text-base leading-8 sm:text-lg ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                <p>
+                  Hi, I’m the founder of air.neetwork. Trusting someone you meet online can be difficult—we understand. We started air.neetwork to help students connect with All India Rankers who have already walked the path they’re preparing to take.
+                </p>
+                <p>
+                  Free topper interactions are available online, but they don’t always leave room for the questions you personally want to ask. We understand that uncertainty firsthand. We prepared during the COVID-19 lockdown, when classrooms closed and routines changed overnight. We know how much practical, personal guidance can matter.
+                </p>
+                <p>
+                  Our mentorship is an investment, and we know the cost matters. We work to make it worthwhile with honest advice from people who understand the journey firsthand.
+                </p>
+                <p className="font-medium">
+                  Still unsure? You can speak directly with our founder.
                 </p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { name: 'Aryan Sharma', rank: 'AIR 48', score: '710/720', college: 'AIIMS New Delhi', focus: 'Physics Numericals & Speed' },
-                  { name: 'Dr. Tanya Verma', rank: 'AIR 112', score: '705/720', college: 'MAMC New Delhi', focus: 'NCERT Biology High-Yield Retention' },
-                  { name: 'Rohan Deshmukh', rank: 'AIR 230', score: '695/720', college: 'VMMC & Safdarjung', focus: 'Organic Chemistry Pathways' },
-                ].map((topper, i) => (
-                  <div
-                    key={i}
-                    className={`p-5 rounded-2xl border flex flex-col justify-between ${
-                      isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full ${
-                          isDark ? 'bg-[#CCFF00]/15 text-[#CCFF00]' : 'bg-[#0066FF]/10 text-[#0066FF]'
-                        }`}>
-                          {topper.rank}
-                        </span>
-                        <span className="text-xs font-mono text-zinc-400">{topper.score}</span>
-                      </div>
-                      <h3 className="text-lg font-bold">{topper.name}</h3>
-                      <div className="text-xs text-zinc-400 flex items-center gap-1.5 mt-1 font-mono">
-                        <GraduationCap className="w-3.5 h-3.5" />
-                        <span>{topper.college}</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-zinc-800/60 text-xs font-mono text-zinc-400">
-                      <strong>Focus:</strong> {topper.focus}
-                    </div>
-                  </div>
-                ))}
+              <div className={`mt-6 inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold ${isDark ? 'border-zinc-700 text-zinc-200' : 'border-slate-200 text-slate-700'}`}>
+                <PhoneCall className={`h-4 w-4 ${isDark ? 'text-[#CCFF00]' : 'text-[#0066FF]'}`} />
+                Founder’s direct number coming soon
               </div>
             </div>
-          )}
 
-          {activeNav === 'oqad' && (
-            <div className="max-w-2xl mx-auto p-6 sm:p-8 rounded-2xl border text-left bg-zinc-900/40 border-zinc-800">
-              <div className="flex items-center justify-between mb-4">
-                <span className={`text-xs font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-md ${
-                  isDark ? 'bg-[#CCFF00]/15 text-[#CCFF00]' : 'bg-[#0066FF]/10 text-[#0066FF]'
-                }`}>
-                  O.Q.A.D #142 · Physics Electrostatics
-                </span>
-                <span className="text-xs font-mono text-zinc-400">High Yield NEET UG</span>
-              </div>
-              <h3 className="text-base sm:text-lg font-semibold leading-relaxed mb-4">
-                Two point charges +4q and +q are placed at distance L apart. A third charge Q is placed on the line joining them so that the whole system remains in equilibrium. What is the value and position of Q?
-              </h3>
-              <div className="space-y-2 text-xs font-mono text-zinc-300">
-                <div className="p-2.5 rounded-lg bg-black/40 border border-zinc-800">A) -4q/9 at distance 2L/3 from +4q</div>
-                <div className="p-2.5 rounded-lg bg-black/40 border border-zinc-800">B) +4q/9 at distance L/3 from +4q</div>
-                <div className="p-2.5 rounded-lg bg-black/40 border border-zinc-800">C) -2q/3 at distance L/2 from +4q</div>
-                <div className="p-2.5 rounded-lg bg-black/40 border border-zinc-800">D) -q/4 at distance L/4 from +q</div>
-              </div>
-              <p className="text-xs text-zinc-500 font-mono mt-4">
-                Log in to submit your answer and view the complete ranker explanation.
-              </p>
-            </div>
-          )}
-
-          {activeNav === 'abroad' && (
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl font-extrabold uppercase tracking-tight mb-3">
-                MBBS Abroad Guidance
+            <div>
+              <h2 className={`mb-3 text-xs font-semibold uppercase tracking-[0.22em] ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                Our Vision
               </h2>
-              <p className="text-sm text-zinc-400 font-mono max-w-xl mx-auto mb-8">
-                NMC &amp; WHO recognized international medical universities with transparent fee structures and FMGE/NExT coaching.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left font-mono">
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className="font-bold text-sm mb-1">Georgia &amp; Kazakhstan</div>
-                  <div className="text-xs text-zinc-400">European curriculum, 100% English medium, low living cost.</div>
-                </div>
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className="font-bold text-sm mb-1">NMC 2021 Compliant</div>
-                  <div className="text-xs text-zinc-400">Strict adherence to 54 months course + 12 months internship.</div>
+              <div className={`relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl border ${isDark ? 'border-zinc-800 bg-zinc-950' : 'border-slate-200 bg-slate-100'}`}>
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <span className={`grid h-14 w-14 place-items-center rounded-full ${isDark ? 'bg-[#CCFF00] text-black' : 'bg-[#0066FF] text-white'}`}>
+                    <Play className="ml-0.5 h-6 w-6 fill-current" />
+                  </span>
+                  <span className={`text-sm font-medium ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+                    Vision video coming soon
+                  </span>
+                  <span className={`text-xs ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                    YouTube or Vimeo link will appear here
+                  </span>
                 </div>
               </div>
             </div>
-          )}
-
-          {activeNav === 'about' && (
-            <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-3xl font-extrabold uppercase tracking-tight mb-4">
-                About AIR NEETwork
-              </h2>
-              <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                AIR NEETwork was founded with a singular conviction: genuine NEET rankers who conquered the exam under real pressure provide far better strategic direction than generic commercial sales counselors.
-              </p>
-              <p className={`text-xs font-mono leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                Headquartered in Jaipur (302018), we mentor aspirants across India, focusing on systematic negative mark reduction, speed optimization, and high-yield topic mastery.
-              </p>
-            </div>
-          )}
-        </div>
+          </section>
+        ) : (
+          <div className="flex-1" aria-hidden="true" />
+        )}
 
         {/* End of Screen: "Get in touch" Button (Positioned at the end of content, strictly OUTSIDE the footer) */}
         <div className="py-12 flex flex-col items-center justify-center text-center border-t border-zinc-800/50">
